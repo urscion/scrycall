@@ -24,6 +24,7 @@ class Attributes(Enum):
     LOYALITY = "%{loyalty}"
     ORACLE_TEXT = "%{oracle_text}"
     FLAVOR_TEXT = "%{flavor_text}"
+    RARITY = "%{rarity}"
 
 
 # shortcuts for printing card attrobutes in the format string
@@ -37,6 +38,7 @@ ATTR_CODES = {
     "%l": Attributes.LOYALITY.value,
     "%o": Attributes.ORACLE_TEXT.value,
     "%f": Attributes.FLAVOR_TEXT.value,
+    "%r": Attributes.RARITY.value,
     "%|": "%{spacer}",
 }
 ATTR_DELIM = "."
@@ -110,21 +112,27 @@ def find_attrs(
     attr = attributes[attr_level]
     prev_data = attr_data(data, drill_values)
 
-    if attr == "*":
+    if attr.startswith("*"):
         # Assume dict or list
         if isinstance(prev_data, dict):
             vals = [v or CUSTOM_NULL for v in prev_data.values()]
         elif isinstance(prev_data, list):
             vals = prev_data
-        for i, v in enumerate(vals):
-            CARD_SUBLINES[i].append(v)
-    elif attr == "?":
+        if attr.endswith("-"):
+            value = ",".join(vals)
+        else:
+            for i, v in enumerate(vals):
+                CARD_SUBLINES[i].append(v)
+    elif attr.startswith("?"):
         if isinstance(prev_data, dict):
             vals = list(prev_data.keys())
         elif isinstance(prev_data, list):
             vals = [str(i) for i in range(0, len(prev_data))]
-        for i, v in enumerate(vals):
-            CARD_SUBLINES[i].append(v)
+        if attr.endswith("-"):
+            value = ",".join(vals)
+        else:
+            for i, v in enumerate(vals):
+                CARD_SUBLINES[i].append(v)
     elif attr == "/":
         # Resolve URL
         if prev_data.startswith("http"):
