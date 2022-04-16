@@ -1,35 +1,33 @@
 # Scrycall
-A command line tool for querying the scryfall.com API for Magic cards.
+A command line tool for the [Scryfall](https://scryfall.com) API.
 
 <img src="https://i.imgur.com/k2M2bhR.gif">
 
 ## What does Scrycall do?
-Scrycall makes it easy to search for MTG cards from the command line. It prints the card information of your choice to the terminal, allowing for easy integration with other tools using pipes. Scrycall uses https://scryfall.com/ to query for cards which are returned as JSON objects. You can parse the JSON using special format parameters (see below) to print any information you want about the cards you query.
+Scrycall makes it easy to search for MTG cards from the command line. It prints the card information of your choice to the terminal, allowing for easy integration with other tools. Scrycall uses https://scryfall.com/ to query for cards which are returned as JSON objects. You can parse the JSON using special attribute parameters (see below) to print any information you want about the cards you query.
 
-Scrycall also stores the JSON data in a local cache at `~/.cache/scrycall/` to quickly access for repeated queries. The data is considered stale after 24 hours and Scrycall will automatically query the API again for a refresh if you try to use stale data. You can manage your cache using some command line arguments (see below).
+Scrycall stores the query data in a local cache at `~/.cache/scrycall/` to adhere to HTTP caching best practices. The data is considered stale after 24 hours and Scrycall will automatically query the API again for a refresh if you try to use stale data. You can manage your cache using command line arguments (see below).
 
 
 ## How do I install Scrycall?
-You can download the project using the command `git clone https://github.com/0xdanelia/scrycall`
+Download the project: `git clone https://github.com/0xdanelia/scrycall`
 
-You can compile the code into an executable using `pyinstaller scry.spec`.
+Compile to a binary: `pyinstaller scry.spec`.
 
-You can run it using the command `path/to/scry [ARGS]` 
-
-You can also just run the python source script using the command `scrycall.py [ARGS]` (note: prefix with `python` if `python3` doesn't resolve)
+You can run the python source script using the command `python3 scrycall_app.py`
 
 ## How do I use Scrycall?
 
 First familiarize yourself with the Scryfall search syntax at https://scryfall.com/docs/syntax
 
-Then simply run Scrycall using your plain text search query as the arguments.
+Then run Scrycall using your plain text search query as the arguments. If needed, surround your query in single quotes (i.e. when using `!` as it's a special bash character)
 ```
-> scry venser t:creature
+> scry query venser t:creature
 Venser, Shaper Savant
 Venser's Sliver
 ```
 ```
-> scry o:"counter target noncreature spell unless"
+> scry query o:"counter target noncreature spell unless"
 Concerted Defense
 Disciple of the Ring
 Izzet Charm
@@ -39,13 +37,11 @@ Stubborn Denial
 
 You can also pipe the output into another program. For example, use Scrycall to get the url of a card image, then pipe into wget to download and save the image.
 ```
-> scry "time walk" set:alpha --f="%[image_uris;large]" | xargs wget -O "time_walk.jpg"
+> scry query "time walk" set:alpha --f="%[image_uris;large]" | xargs wget -O "time_walk.jpg"
 ```
-The Scryfall.com developers request that you add a delay of 50-100 milliseconds when making multiple rapid calls to the api. Scrycall automatically adds this delay between multiple calls within the program, but you are on your own when making calls elsewhere.
 
-## What else can I print about a card?
-
-You can use the argument `--format=` or `--f=` to print different information about the cards that the query returns. Within the format string  `%` is a special character used to indicate certain parameters based on the JSON card objects. Be sure to surround your format string in quotes "" if it contains any whitespace. The special parameters are:
+## Formatting
+You can use the argument `--format` to print different information about the cards that the query returns. Within the format string  `%` is a special character used to indicate certain parameters based on the JSON card objects. Be sure to surround your format string in quotes "" if it contains any whitespace. The shortcut attribute parameters are:
 ```
 %n    name
 %m    mana_cost
@@ -60,80 +56,51 @@ You can use the argument `--format=` or `--f=` to print different information ab
 %|    this will separate output into nicely spaced columns
 ```
 ```
-> scry counterspell --format="%n  %m  [%o]"
+> scry query counterspell --format="%n  %m  [%o]"
 Counterspell  {U}{U}  [Counter target spell.]
 ```
 
-You can also parse the raw JSON yourself by putting the attribute names inside `%[]` and using `;` to separate multiple attributes.
+You can also parse the raw JSON attribute-value pairs by putting the attribute names inside `%{}` and using `.` to separate multiple attributes.
 ```
-> scry "lightning bolt" --format="%[legalities;modern]"
+> scry query "lightning bolt" --format="%{legalities.modern}"
 legal
 ```
 
-To print all available property names, use `?` in the brackets.
+To print all available attributes, use `?` or `?-`.
 ```
-> scry "black lotus" --format="%[prices;?]"
-['eur', 'eur_foil', 'tix', 'usd', 'usd_foil']
+> scry query '!"black lotus"' --format "%{prices.?}"
+usd       
+usd_foil  
+usd_etched
+eur
+eur_foil
+tix
+```
+```
+> scry query '!"black lotus"' --format "%{prices.?-}"
+usd,usd_foil,usd_etched,eur,eur_foil,tix
 ```
 
-To iterate every property of a json object, use `*` in the brackets. This may print multiple lines for each card.
+To iterate every value of an attribute, use `*` or `*-`.
 ```
-> scry "serra angel" --format="%[keywords;*]"
+> scry query '!"serra angel"' --format="%{keywords.*}"
 Flying
 Vigilance
 ```
-
-You can print the name of the previous property using `^` within the brackets. This can be useful when combined with iterating.
 ```
-> scry "scalding tarn" --format="%[prices;*;^] %| %[prices;*]"
-usd       55.63
-usd_foil  102.86
-eur       46.00
-eur_foil  81.50
-tix       21.14
+> scry query '!"serra angel"' --format="%{keywords.*-}"
+Flying,Vigilance
 ```
 
-Some properties are web addresses for an api call to another object. The api will automatically be called (and cached) and you can traverse the retrieved object as normal.
+Some attribute values are Scryfall URIs. Use `/` to resolve them.
 ```
-> scry "mox lotus" --f="%[set_uri;name] was released %[set_uri;released_at]"
+> scry query "mox lotus" --format "%{set_uri./.name} was released %{set_uri./.released_at}"
 Unhinged was released 2004-11-19
 ```
 
-## What other arguments are there?
-
-`--null=` or `--n=`
-
-When a card property in `--format=` is null or empty, print this custom output in its place. This string can use the same `%` format characters as `--format=` except it cannot contain `%|` for column seperation or `%[*]` for iterating. If this text contains any null or empty properties, print "" in its place.
-
-`--help` or `--h`
-
-Print some helpful information like you see here.
-
-`--help-format`
-
-Print helpful information specific to the `--format=` and `--null=` argument syntax.
-
 ### Cache commands
 
-`--cache-only` or `--c`
-
-Query your local cache only. Do not query the api even if cache is stale.
-
-`--ignore-cache` or `--i`
-
-Query the api only. Do not query cache even if api can not be reached.
-
-`--do-not-cache` or `--d`
-
-Do not write fresh api data to your local cache.
-
-`--clean-cache`
-
-Search the local cache and delete any stale data.
-
-`--delete-cache`
-
-Delete everything from the local cache.
+Run `scry cache --help` for more information.
 
 ## Testing
 

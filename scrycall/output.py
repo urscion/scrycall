@@ -3,7 +3,7 @@ from typing import Union
 import re
 from collections import defaultdict
 
-from .scry_data import get_uri_attribute
+from .data import get_uri_attribute
 
 
 class FormatError(Exception):
@@ -163,7 +163,6 @@ def find_attrs(
                 value = find_attrs(
                     data, attributes, attr_level + 1, drill_values
                 )
-                print(value)
     return value
 
 

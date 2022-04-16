@@ -1,9 +1,11 @@
 import json
 import hashlib
-import re
 import pathlib
+import time
 from abc import ABCMeta, abstractmethod
 from typing import Any
+
+DAY_S = 24 * 60 * 60
 
 
 class Cache(metaclass=ABCMeta):
@@ -31,7 +33,7 @@ class Cache(metaclass=ABCMeta):
         try:
             with open(path, "r") as cachefile:
                 return json.load(cachefile)
-        except:
+        except Exception:
             return None
 
     def load_item(self, uid: str):
@@ -43,6 +45,18 @@ class Cache(metaclass=ABCMeta):
         path = self.path / uid
         return self._read_from_file(path)
 
+    def prune(self):
+        """Remove stale items."""
+        current_time = time.time()
+        for f in self.path.iterdir():
+            if f.stat().st_ctime + DAY_S < current_time:
+                f.unlink()
+
+    def purge(self):
+        """Remove all items."""
+        for f in self.path.iterdir():
+            f.unlink()
+
 
 class UrlCardCache(Cache):
     """Store lists of Card cache IDs"""
@@ -52,6 +66,7 @@ class UrlCardCache(Cache):
 
     @classmethod
     def uid(cls, url) -> str:
+        """Return a unique ID for the given URL."""
         return hashlib.md5(url.encode()).hexdigest()
 
     def store_url(self, url, cards: list[dict]):
@@ -66,9 +81,8 @@ class CardCache(Cache):
 
     @classmethod
     def uid(cls, card: dict) -> str:
-        name = card["name"].replace(" ", "_")
-        name = re.sub("[^a-zA-Z0-9_]", "-", name)
-        return f"{name}_{card['id']}"
+        name_hash = hashlib.md5(card["name"].encode()).hexdigest()
+        return f"{name_hash}_{card['id']}"
 
     def store_card(self, card: dict):
         path = self.path / self.uid(card)
