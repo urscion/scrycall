@@ -37,7 +37,7 @@ Stubborn Denial
 
 You can also pipe the output into another program. For example, use Scrycall to get the url of a card image, then pipe into wget to download and save the image.
 ```
-> scry query "time walk" set:alpha --f="%[image_uris;large]" | xargs wget -O "time_walk.jpg"
+> scry query "time walk" set:alpha --format="%{image_uris.large}" | cut -d'?' -f1 | xargs -n 1 -I {} curl {} > "time_walk.jpg"
 ```
 
 ## Formatting
