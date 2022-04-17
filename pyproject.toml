@@ -2,7 +2,7 @@
 name = "scrycall"
 version = "0.1.0"
 description = "Scryfall CLI"
-authors = ["Peter Clay <pwclay@gmail.com>"]
+authors = ["0xdanelia <77199052+0xdanelia@users.noreply.github.com>", "Peter Clay <pwclay@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
