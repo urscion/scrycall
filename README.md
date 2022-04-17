@@ -1,6 +1,11 @@
 # Scrycall
 A command line tool for the [Scryfall](https://scryfall.com) API.
 
+## Dependencies
+
+- Python 3.9
+- [Poetry](https://python-poetry.org/docs/)
+
 <img src="https://i.imgur.com/k2M2bhR.gif">
 
 ## What does Scrycall do?
@@ -12,9 +17,9 @@ Scrycall stores the query data in a local cache at `~/.cache/scrycall/` to adher
 ## How do I install Scrycall?
 Download the project: `git clone https://github.com/0xdanelia/scrycall`
 
-Compile to a binary: `pyinstaller scry.spec`.
+Compile to a binary: `pyinstaller scry.spec --clean`.
 
-You can run the python source script using the command `python3 scrycall_app.py`
+You can run the python source script using the command `poetry run scry` or `python3 scrycall_app.py`.
 
 ## How do I use Scrycall?
 

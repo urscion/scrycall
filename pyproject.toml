@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "scrycall"
+version = "0.1.0"
+description = "Scryfall CLI"
+authors = ["Peter Clay <pwclay@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.9, <3.11"
+requests = "^2.27"
+types-requests = "^2.27"
+
+[tool.poetry.dev-dependencies]
+black = "^22.1"
+flake8 = "^4.0.1"
+mypy = "^0.941"
+pyinstaller = "^4.10"
+
+[tool.poetry.scripts]
+scry = "scrycall.cli:main"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

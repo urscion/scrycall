@@ -9,9 +9,9 @@ class ArgumentError(Exception):
     """Error with input arguments"""
 
 
-def main(args) -> int:
+def main() -> int:
     parser = _parser()
-    parsed_args = parser.parse_args(args)
+    parsed_args = parser.parse_args()
     return parsed_args.func(parsed_args)
 
 
