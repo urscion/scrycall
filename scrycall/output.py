@@ -87,8 +87,11 @@ def print_cards(cards: list[dict], formatting: str) -> None:
 def attr_data(data: dict, attributes: list[Union[str, int]]):
     """Get data from a data structure, drilling down."""
     rval = data
-    for attr in attributes:
-        rval = rval[attr]
+    try:
+        for attr in attributes:
+            rval = rval[attr]
+    except Exception:
+        return {}
     return rval
 
 
@@ -154,7 +157,7 @@ def find_attrs(
                 value = find_attrs(
                     data, attributes, attr_level + 1, drill_values
                 )
-                if value == None:
+                if value is None:
                     value = CUSTOM_NULL
         else:
             value = str(attr_data(data, drill_values))
@@ -194,7 +197,12 @@ def marker_replace(card: dict, match: re.Match) -> str:
             raise FormatAttributeError(
                 f"Could not find an attribute in {marker}!"
             ) from e
-        repl_str += find_attrs(card, attrs, 0, [])
+        # Special cases for two-sided cards
+        if "card_faces" in card and any(x in attrs for x in ("colors", "type_line", "power", "toughness", "mana_cost", "oracle_text")):
+            # Assume first card
+            repl_str += find_attrs(card["card_faces"][0], attrs, 0, [])
+        else:
+            repl_str += find_attrs(card, attrs, 0, [])
     else:  # raw_marker was all %s
         repl_str += marker
     return repl_str
